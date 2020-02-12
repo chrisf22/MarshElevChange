@@ -33,3 +33,19 @@ year_index <- unlist(year_list)
 num_obs <- lapply(year_list, FUN=length)
 num_obs_fun <- function(x){rep(x, num_obs[[x]])}
 site_index <- unlist(lapply(1:100, FUN=num_obs_fun))
+
+test_index <- which(!is.na(site_means_wvar), arr.ind=TRUE)
+test_index <- test_index[order(test_index[,1]), ]
+data_vec <- site_means_wvar[test_index]
+
+library(rstan)
+rstan_options(auto_write = TRUE)
+setwd("/Users/chrisfield/Documents/folders/GitProjects/MarshElevChange/")
+#setwd("/Users/chrisfield/Desktop/")
+input_data <- list(data_vec = data_vec, year_index = year_index, site_index=site_index)
+fit_cp <- stan(file='MEC_model_test.stan', data=input_data, iter=100000, warmup=10000, chains=1, seed=483892929, refresh=1200, control = list(adapt_delta = 0.99))
+print(fit_cp)
+params_cp <- as.data.frame(extract(fit_cp, permuted=FALSE))
+readRDS("test_normal.rds")
+
+
