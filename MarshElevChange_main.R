@@ -38,14 +38,65 @@ test_index <- which(!is.na(site_means_wvar), arr.ind=TRUE)
 test_index <- test_index[order(test_index[,1]), ]
 data_vec <- site_means_wvar[test_index]
 
+
+# load real set data
+setwd("/Users/chrisfield/Dropbox/USFWScontract/accretion_data/final_data/")
+MACWA_sets <- read.csv(file = "MACWA_23Feb2020.csv", header=TRUE, sep=",", stringsAsFactors=FALSE, quote="")
+DENERR_sets <- read.csv(file = "DENERR_23Feb2020.csv", header=TRUE, sep=",", stringsAsFactors=FALSE, quote="")
+EBF_sets <- read.csv(file = "EBF_23Feb2020.csv", header=TRUE, sep=",", stringsAsFactors=FALSE, quote="")
+MERI_sets <- read.csv(file = "MERI_2March2020.csv", header=TRUE, sep=",", stringsAsFactors=FALSE, quote="")
+
+region <- rep(1, length(MACWA_sets$pin_ht))
+MACWA_sets <- cbind(MACWA_sets, region)
+
+region <- rep(2, length(DENERR_sets$pin_ht))
+DENERR_sets <- cbind(DENERR_sets, region)
+
+region <- rep(3, length(EBF_sets$pin_ht))
+EBF_sets <- cbind(EBF_sets, region)
+
+region <- rep(4, length(MERI_sets$pin_ht))
+MERI_sets <- cbind(MERI_sets, region)
+
+MACWA_sets <- rbind(MACWA_sets, DENERR_sets, EBF_sets, MERI_sets)
+
+MACWA_sets$year <- MACWA_sets$year - min(MACWA_sets$year)
+
+sites_num <- unique(MACWA_sets$site)
+for(i in 1:length(sites_num)){
+  MACWA_sets$site[MACWA_sets$site==sites_num[i]] <- i
+}
+
+data_vec <- as.numeric(MACWA_sets$pin_ht)
+year_index <- as.numeric(MACWA_sets$year)
+site_index <- as.numeric(MACWA_sets$site)
+region_index <- as.numeric(MACWA_sets$region)
+N <- length(data_vec)
+NN <- max(site_index)
+
 library(rstan)
 rstan_options(auto_write = TRUE)
 setwd("/Users/chrisfield/Documents/folders/GitProjects/MarshElevChange/")
 #setwd("/Users/chrisfield/Desktop/")
-input_data <- list(data_vec = data_vec, year_index = year_index, site_index=site_index)
-fit_cp <- stan(file='MEC_model_test.stan', data=input_data, iter=100000, warmup=10000, chains=1, seed=483892929, refresh=1200, control = list(adapt_delta = 0.99))
+input_data <- list(data_vec = data_vec, year_index = year_index, site_index=site_index, N=N, NN=NN, region_index=region_index)
+fit_cp <- stan(file='MEC_model_test_real_data.stan', data=input_data, iter=20000, warmup=10000, chains=1, seed=483892929, refresh=1200, control = list(adapt_delta = 0.99))
+fit_cp <- stan(file='MEC_model_test_real_data.stan', data=input_data, iter=20000, warmup=10000, chains=1, seed=400, refresh=1200, control = list(adapt_delta = 0.99))
 print(fit_cp)
 params_cp <- as.data.frame(extract(fit_cp, permuted=FALSE))
 readRDS("test_normal.rds")
+
+hist(params_cp$`chain:1.ainter_mu`)
+hist(params_cp$`chain:1.aslope_mu`)
+
+
+hist(params_cp$`chain:1.aslope_mu`, main=" ", xlab="mm/year")
+slope_means <- mat.or.vec(max(site_index), 1)
+for(i in 1:max(site_index)){
+  slope_means[i] <- mean(params_cp[,paste("chain:1.slope[", i, "]", sep="")])
+  points(slope_means[i], 0, pch=16, col=rgb(0, 0, 0, 0.4))
+}
+
+
+
 
 
