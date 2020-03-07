@@ -72,12 +72,15 @@ sites_num <- unique(MACWA_sets$site)
 
 ###THIS IS PROBABLY WHERE YOU GET RID OF THE FIRST YEARS###
 # go through and standardize years to a patch specific first date, then get rid of all of the rows with the lowest date; loop through site num
+starting_year <- rep(0, length(MACWA_sets$year))
+MACWA_sets <- cbind(MACWA_sets, starting_year)
 for(i in 1:length(sites_num)){
   temp <- MACWA_sets[MACWA_sets$site == sites_num[i], ]
   first_year <- min(temp$year)
   baseline <- temp$pin_ht[temp$year==min(temp$year)]
   MACWA_sets[MACWA_sets$site == sites_num[i], ]$pin_ht <- MACWA_sets[MACWA_sets$site == sites_num[i], ]$pin_ht - baseline
   MACWA_sets[MACWA_sets$site == sites_num[i], ]$year <- MACWA_sets[MACWA_sets$site == sites_num[i], ]$year - first_year
+  MACWA_sets[MACWA_sets$site == sites_num[i], ]$starting_year <- first_year
 }
 MACWA_sets <- MACWA_sets[MACWA_sets$year != 0, ]
 
