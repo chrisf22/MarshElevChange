@@ -65,10 +65,21 @@ MERI_sets <- cbind(MERI_sets, region)
 MACWA_sets <- rbind(MACWA_sets, DENERR_sets, EBF_sets, MERI_sets)
 
 # subtract the minimum year from the year records so that each is the number of years since the first SET measurement
-MACWA_sets$year <- MACWA_sets$year - min(MACWA_sets$year)
+#MACWA_sets$year <- MACWA_sets$year - min(MACWA_sets$year)
 
 # get a list of the unique site names
 sites_num <- unique(MACWA_sets$site)
+
+###THIS IS PROBABLY WHERE YOU GET RID OF THE FIRST YEARS###
+# go through and standardize years to a patch specific first date, then get rid of all of the rows with the lowest date; loop through site num
+for(i in 1:length(sites_num)){
+  temp <- MACWA_sets[MACWA_sets$site == sites_num[i], ]
+  first_year <- min(temp$year)
+  baseline <- temp$pin_ht[temp$year==min(temp$year)]
+  MACWA_sets[MACWA_sets$site == sites_num[i], ]$pin_ht <- MACWA_sets[MACWA_sets$site == sites_num[i], ]$pin_ht - baseline
+  MACWA_sets[MACWA_sets$site == sites_num[i], ]$year <- MACWA_sets[MACWA_sets$site == sites_num[i], ]$year - first_year
+}
+MACWA_sets <- MACWA_sets[MACWA_sets$year != 0, ]
 
 # filter the list of SET data to keep only sites that are in one of the datasets
 sets_site_list <- sets_site_list[unlist(lapply(sets_site_list$site, function(r) any(r %in% sites_num))), ]
@@ -79,6 +90,7 @@ MACWA_sets <- MACWA_sets[MACWA_sets$site!=setdiff(sites_num, sets_site_list$site
 # for both the datasets and the list of SET data, remove rows for the SETs that are outside of SHARP patches (for now)
 MACWA_sets <- MACWA_sets[unlist(lapply(MACWA_sets$site, function(r) any(r %in% sets_site_list$site[!is.na(sets_site_list$PatchID)]))), ]
 sets_site_list <- sets_site_list[unlist(lapply(sets_site_list$site, function(r) any(r %in% sets_site_list$site[!is.na(sets_site_list$PatchID)]))), ]
+
 
 # find the unique sites from the site list 
 sites_unique <- unique(sets_site_list$site)
@@ -177,7 +189,7 @@ for(i in 1:length(patches_unique)){
 geo_pred[i] <- as.numeric(sets_site_list$geo1[sets_site_list$PatchID==i][1])
 slr[i] <- as.numeric(sets_site_list$noaa_slt[sets_site_list$PatchID==i][1])
 forest[i] <- as.numeric(sets_site_list$Loss_prop[sets_site_list$PatchID==i][1])
-preds[, i] <- params_cp$`chain:1.D` + params_cp[,paste("chain:1.geo[", geo_pred[i], "]", sep="")] + params_cp$`chain:1.B`*0 + params_cp$`chain:1.C`*1 + params_cp[,paste("chain:1.patch[", i, "]", sep="")]
+preds[, i] <- params_cp$`chain:1.D` + params_cp[,paste("chain:1.geo[", geo_pred[i], "]", sep="")] + params_cp$`chain:1.B`*0 + params_cp$`chain:1.C`*0 + params_cp[,paste("chain:1.patch[", i, "]", sep="")]
 preds_relative[, i] <- preds[, i] - slr[i]
 }
 
