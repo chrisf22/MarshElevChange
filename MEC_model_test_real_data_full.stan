@@ -5,7 +5,7 @@ data {
   vector[N] data_vec;
   vector[N] year_index;
   vector[N] restrict;
-  vector[N] veg;
+  int<lower=0,upper=1> veg[N];
   int<lower=1,upper=NN> site_index[N];
   int<lower=1,upper=NNN> patches_index[N];
   int<lower=1,upper=4> geo_index[N];
@@ -13,13 +13,11 @@ data {
 
 parameters {
   vector[NN] inter;
-  vector[NN] site;
   vector[NNN] patch;
   real<lower=0> stdev;
   real<lower=0> inter_stdev;
   real<lower=0> patch_stdev;
   real<lower=0> geo_stdev;
-  real<lower=0> site_stdev;
   vector[4] geo;
   real B;
   real C;
@@ -39,17 +37,15 @@ model {
   for(q in 1:4){
   geo[q] ~ normal(0, geo_stdev);
   }
-  B ~ normal(0, 100);
-  C ~ normal(0, 100);
-  D ~ normal(0, 100);
-  inter_mu ~ normal(0, 1000);
+  B ~ normal(0, 10);
+  C ~ normal(0, 10);
+  D ~ normal(0, 20);
+  inter_mu ~ normal(0, 500);
   inter_stdev ~ uniform(0, 100);
-  site_stdev ~ uniform(0, 100);
   patch_stdev ~ uniform(0, 100);
-  geo_stdev ~ uniform(0, 100);
+  geo_stdev ~ uniform(0, 10);
   for(z in 1:NN){
-    inter[z] ~ normal(inter_mu, inter_stdev);
-    site[z] ~ normal(0, site_stdev);
+  inter[z] ~ normal(inter_mu, site_stdev);
   }
   for(n in 1:NNN){
   patch[n] ~ normal(0, patch_stdev);
